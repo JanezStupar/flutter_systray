@@ -7,7 +7,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-enum ActionType { Quit, Focus, Callback }
+enum ActionType { Quit, Focus, SystrayEvent }
 
 class SystrayAction {
   final ActionType actionType;
@@ -31,12 +31,26 @@ class SystrayAction {
 
 class FlutterSystray {
   static const MethodChannel _channel = const MethodChannel('plugins.flutter.io/flutter_systray');
+  final _handlers = <String, Function>{};
+  bool _initialized = false;
+
+  FlutterSystray.init() {
+    _channel.setMethodCallHandler((MethodCall methodCall) async {
+      if (methodCall.method == "systrayEvent") {
+        Function handler = _handlers[methodCall.arguments];
+        if (handler != null) {
+          handler();
+        }
+      }
+    });
+    _initialized = true;
+  }
 
   /*
   * Show a systray icon
   * */
   static Future<String> initSystray(String iconPath, List<SystrayAction> actions) async {
-    Map<String, Map<String, String>> map = serializeActions(actions);
+    Map<String, Map<String, String>> map = _serializeActions(actions);
     map["mainIcon"] = <String, String>{
       "iconPath": iconPath,
     };
@@ -46,12 +60,12 @@ class FlutterSystray {
   }
 
   static Future<String> addActions(List<SystrayAction> actions) async {
-    Map<String, Map<String, String>> map = serializeActions(actions);
+    Map<String, Map<String, String>> map = _serializeActions(actions);
     String value = await _channel.invokeMethod('addActions', map);
     return value;
   }
 
-  static Map<String, Map<String, String>> serializeActions(List<SystrayAction> actions) {
+  static Map<String, Map<String, String>> _serializeActions(List<SystrayAction> actions) {
     var map = <String, Map<String, String>>{};
 
     actions.forEach((SystrayAction element) {
@@ -59,5 +73,13 @@ class FlutterSystray {
     });
 
     return map;
+  }
+
+  registerEventHandler(String handlerKey, Function handler) {
+    if (_initialized == false) {
+      throw Exception("not initialized, call init() before registering event handlers");
+    }
+
+    _handlers[handlerKey] = handler;
   }
 }

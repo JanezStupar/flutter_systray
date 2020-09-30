@@ -15,21 +15,22 @@ const channelName = "plugins.flutter.io/flutter_systray"
 
 // FlutterSystrayPlugin implements flutter.Plugin and handles method.
 type FlutterSystrayPlugin struct {
-	window *glfw.Window
+	window  *glfw.Window
+	channel *plugin.MethodChannel
 }
 
 type ActionEnumType int
 
 type actionType struct {
-	Quit     ActionEnumType
-	Focus    ActionEnumType
-	Callback ActionEnumType
+	Quit         ActionEnumType
+	Focus        ActionEnumType
+	SystrayEvent ActionEnumType
 }
 
 var ActionType = &actionType{
-	Quit:     0,
-	Focus:    1,
-	Callback: 2,
+	Quit:         0,
+	Focus:        1,
+	SystrayEvent: 2,
 }
 
 type SystrayAction struct {
@@ -50,9 +51,9 @@ func (p *FlutterSystrayPlugin) InitPluginGLFW(window *glfw.Window) error {
 
 // InitPlugin initializes the plugin.
 func (p *FlutterSystrayPlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
-	channel := plugin.NewMethodChannel(messenger, channelName, plugin.StandardMethodCodec{})
-	channel.HandleFunc("initSystray", p.initSystrayHandler)
-	channel.HandleFunc("addActions", p.addActionsHandler)
+	p.channel = plugin.NewMethodChannel(messenger, channelName, plugin.StandardMethodCodec{})
+	p.channel.HandleFunc("initSystray", p.initSystrayHandler)
+	p.channel.HandleFunc("addActions", p.addActionsHandler)
 	return nil
 }
 
@@ -74,7 +75,7 @@ func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply 
 		var data []byte
 		data, err := parseIcon(mainIcon)
 		if err != nil {
-			fmt.Println("An error has occurred while parsing the icon: %S", err)
+			fmt.Println(fmt.Sprintf("An error has occurred while parsing the icon: %s", err))
 		}
 
 		if data != nil {
@@ -83,7 +84,7 @@ func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply 
 
 		err = p.addActions(actions)
 		if err != nil {
-			fmt.Println("An error has occurred while registering actions", err)
+			fmt.Println(fmt.Sprintf("An error has occurred while registering actions: %s", err))
 		}
 	}
 
@@ -131,9 +132,29 @@ func (p *FlutterSystrayPlugin) addActions(actions []SystrayAction) error {
 				<-mQuit.ClickedCh
 				p.window.SetShouldClose(true)
 			}()
-		} else if action.actionType == ActionType.Callback {
+		} else if action.actionType == ActionType.SystrayEvent {
+			mEvent := systray.AddMenuItem(action.label, action.tooltip)
+			addIcon(action.iconPath, mEvent)
 			// Set up a callback handler
+			go func(reference SystrayAction) {
+				for {
+					<-mEvent.ClickedCh
+					err := p.invokeSystrayEvent(reference)
+					if err != nil {
+						fmt.Println(fmt.Sprintf("An error has occurred while invoking SystrayEvent: %s", err))
+					}
+				}
+			}(action)
 		}
+	}
+
+	return nil
+}
+
+func (p *FlutterSystrayPlugin) invokeSystrayEvent(action SystrayAction) error {
+	err := p.channel.InvokeMethod("systrayEvent", action.name)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -175,7 +196,7 @@ func addIcon(iconPath string, item *systray.MenuItem) {
 	if len(iconPath) > 0 {
 		data, err := parseIcon(iconPath)
 		if err != nil {
-			fmt.Println("An error has occurred while parsing the icon: %S", err)
+			fmt.Println(fmt.Sprintf("An error has occurred while parsing the icon: %s", err))
 		}
 		item.SetIcon(data)
 	}
