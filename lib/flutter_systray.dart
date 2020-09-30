@@ -7,22 +7,57 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+enum ActionType { Quit, Focus, Callback }
+
+class SystrayAction {
+  final ActionType actionType;
+  final String name;
+  final String label;
+  final String tooltip;
+  final String iconPath;
+
+  SystrayAction({this.name, this.label, this.tooltip, this.iconPath, this.actionType});
+
+  Map<String, String> serialize() {
+    return <String, String>{
+      "name": this.name,
+      "label": this.label,
+      "tooltip": this.tooltip,
+      "iconPath": this.iconPath,
+      "actionType": this.actionType.index.toString()
+    };
+  }
+}
+
 class FlutterSystray {
-  static const MethodChannel _channel =
-      const MethodChannel('flutter_systray');
+  static const MethodChannel _channel = const MethodChannel('plugins.flutter.io/flutter_systray');
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+  /*
+  * Show a systray icon
+  * */
+  static Future<String> initSystray(String iconPath, List<SystrayAction> actions) async {
+    Map<String, Map<String, String>> map = serializeActions(actions);
+    map["mainIcon"] = <String, String>{
+      "iconPath": iconPath,
+    };
+
+    String value = await _channel.invokeMethod('initSystray', map);
+    return value;
   }
 
-  static Future<String> showSystrayIcon(String path) async {
-    final String status = await _channel.invokeMethod('showSystrayIcon', {path: path});
-    return status;
+  static Future<String> addActions(List<SystrayAction> actions) async {
+    Map<String, Map<String, String>> map = serializeActions(actions);
+    String value = await _channel.invokeMethod('addActions', map);
+    return value;
   }
 
-  static Future<String> clearSystrayIcon(String path) async {
-    final String status = await _channel.invokeMethod('clearSystrayIcon');
-    return status;
+  static Map<String, Map<String, String>> serializeActions(List<SystrayAction> actions) {
+    var map = <String, Map<String, String>>{};
+
+    actions.forEach((SystrayAction element) {
+      map[element.name] = element.serialize();
+    });
+
+    return map;
   }
 }

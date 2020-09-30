@@ -8,4 +8,4 @@ require (
 	github.com/pkg/errors v0.9.1
 )
 
-replace github.com/JanezStupar/flutter_systray/go => /home/janez/PycharmProjects/trackself/flutter_systray/go
+replace github.com/JanezStupar/flutter_systray/go => /home/janez/PycharmProjects/trackself/utils/flutter_systray/go
