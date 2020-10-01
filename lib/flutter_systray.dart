@@ -7,7 +7,30 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-enum ActionType { Quit, Focus, SystrayEvent }
+enum ActionType {
+  Quit, // Action will trigger application shutdown
+  Focus, // Action will trigger GLFW `window.Show` and bring flutter app to front
+  SystrayEvent // Action will trigger an event that will call a registered callback in flutter app
+}
+
+/*
+* Root systray entry
+* */
+class MainEntry{
+  final String title;
+  final String tooltip;
+  final String iconPath;
+
+  MainEntry({this.title="", this.tooltip="", this.iconPath=""});
+
+  Map<String, String> serialize() {
+    return <String, String>{
+      "title": this.title,
+      "tooltip": this.tooltip,
+      "iconPath": this.iconPath,
+    };
+  }
+}
 
 class SystrayAction {
   final ActionType actionType;
@@ -49,11 +72,9 @@ class FlutterSystray {
   /*
   * Show a systray icon
   * */
-  static Future<String> initSystray(String iconPath, List<SystrayAction> actions) async {
+  static Future<String> initSystray(MainEntry main, List<SystrayAction> actions) async {
     Map<String, Map<String, String>> map = _serializeActions(actions);
-    map["mainIcon"] = <String, String>{
-      "iconPath": iconPath,
-    };
+    map["mainEntry"] = main.serialize();
 
     String value = await _channel.invokeMethod('initSystray', map);
     return value;

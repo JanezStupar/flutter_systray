@@ -19,6 +19,12 @@ type FlutterSystrayPlugin struct {
 	channel *plugin.MethodChannel
 }
 
+type MainEntry struct {
+	title    string
+	tooltip  string
+	iconPath string
+}
+
 type ActionEnumType int
 
 type actionType struct {
@@ -60,31 +66,45 @@ func (p *FlutterSystrayPlugin) InitPlugin(messenger plugin.BinaryMessenger) erro
 func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply interface{}, err error) {
 	// Convert the params into SystrayAction type list
 	argsMap := arguments.(map[interface{}]interface{})
-	var mainIcon string
-	if argsMap["mainIcon"] != nil {
-		mainIcon = argsMap["mainIcon"].(map[interface{}]interface{})["iconPath"].(string)
-		delete(argsMap, "mainIcon")
+	var mainEntry MainEntry
+	if argsMap["mainEntry"] != nil {
+		mainEntry, err = parseMainEntry(argsMap["mainEntry"])
+		if err != nil {
+			fmt.Println("an error has occurred while parsing main entry parameters", err)
+		}
+		delete(argsMap, "mainEntry")
 	}
 
 	actions, err := parseActionParams(argsMap)
 	if err != nil {
-		fmt.Println("An error has occurred while parsing action parameters", err)
+		fmt.Println("an error has occurred while parsing action parameters", err)
 	}
 
 	var readyFunc = func() {
-		var data []byte
-		data, err := parseIcon(mainIcon)
-		if err != nil {
-			fmt.Println(fmt.Sprintf("An error has occurred while parsing the icon: %s", err))
+		if len(mainEntry.iconPath) > 0 {
+			var data []byte
+			data, err := parseIcon(mainEntry.iconPath)
+			if err != nil {
+				fmt.Println(fmt.Sprintf("An error has occurred while parsing the icon: %s", err))
+			}
+
+			if data != nil {
+				systray.SetIcon(data)
+			}
 		}
 
-		if data != nil {
-			systray.SetIcon(data)
+		if len(mainEntry.title) > 0 {
+			println(mainEntry.title)
+			systray.SetTitle(mainEntry.title)
+		}
+
+		if len(mainEntry.tooltip) > 0 {
+			systray.SetTooltip(mainEntry.tooltip)
 		}
 
 		err = p.addActions(actions)
 		if err != nil {
-			fmt.Println(fmt.Sprintf("An error has occurred while registering actions: %s", err))
+			fmt.Println(fmt.Sprintf("an error has occurred while registering actions: %s", err))
 		}
 	}
 
@@ -100,7 +120,7 @@ func (p *FlutterSystrayPlugin) addActionsHandler(arguments interface{}) (reply i
 
 	actions, err := parseActionParams(argsMap)
 	if err != nil {
-		fmt.Println("An error has occurred while parsing action parameters", err)
+		fmt.Println("an error has occurred while parsing action parameters", err)
 	}
 
 	err = p.addActions(actions)
@@ -158,6 +178,16 @@ func (p *FlutterSystrayPlugin) invokeSystrayEvent(action SystrayAction) error {
 	}
 
 	return nil
+}
+
+func parseMainEntry(entry interface{}) (MainEntry, error) {
+	m := entry.(map[interface{}]interface{})
+	parsed := MainEntry{
+		title:    m["title"].(string),
+		tooltip:  m["tooltip"].(string),
+		iconPath: m["iconPath"].(string),
+	}
+	return parsed, nil
 }
 
 func parseActionParams(argsMap map[interface{}]interface{}) ([]SystrayAction, error) {
