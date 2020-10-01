@@ -14,12 +14,12 @@ Install the plugin as is customary.
 
 Import as:
 ```go
-import "github.com/zephylac/title_bar"
+import "github.com/JanezStupar/flutter_systray"
 ```
 
 Then add the following option to your go-flutter [application options](https://github.com/go-flutter-desktop/go-flutter/wiki/Plugin-info):
 ```go
-flutter.AddPlugin(&title_bar.TitleBarPlugin{}),
+flutter.AddPlugin(&flutter_systray.FlutterSystrayPlugin{})
 ```
 ## API
 

@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/JanezStupar/flutter_systray v0.1.1
-	github.com/JanezStupar/flutter_systray/go v0.1.1 // indirect
+	github.com/JanezStupar/flutter_systray/go v0.1.1
 	github.com/Xuanwo/go-locale v1.0.0 // indirect
 	github.com/getlantern/golog v0.0.0-20200929154820-62107891371a // indirect
 	github.com/getlantern/ops v0.0.0-20200403153110-8476b16edcd6 // indirect
