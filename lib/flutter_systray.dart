@@ -4,6 +4,7 @@
 // directory. You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
@@ -18,15 +19,13 @@ enum ActionType {
 * */
 class MainEntry{
   final String title;
-  final String tooltip;
   final String iconPath;
 
-  MainEntry({this.title="", this.tooltip="", this.iconPath=""});
+  MainEntry({this.title="", this.iconPath=""});
 
   Map<String, String> serialize() {
     return <String, String>{
       "title": this.title,
-      "tooltip": this.tooltip,
       "iconPath": this.iconPath,
     };
   }
@@ -36,17 +35,13 @@ class SystrayAction {
   final ActionType actionType;
   final String name;
   final String label;
-  final String tooltip;
-  final String iconPath;
 
-  SystrayAction({this.name, this.label, this.tooltip, this.iconPath, this.actionType});
+  SystrayAction({this.name, this.label, this.actionType});
 
   Map<String, String> serialize() {
     return <String, String>{
       "name": this.name,
       "label": this.label,
-      "tooltip": this.tooltip,
-      "iconPath": this.iconPath,
       "actionType": this.actionType.index.toString()
     };
   }
@@ -76,13 +71,13 @@ class FlutterSystray {
     Map<String, Map<String, String>> map = _serializeActions(actions);
     map["mainEntry"] = main.serialize();
 
-    String value = await _channel.invokeMethod('initSystray', map);
+    String value = await _channel.invokeMethod('initSystray', jsonEncode(map));
     return value;
   }
 
-  static Future<String> addActions(List<SystrayAction> actions) async {
+  static Future<String> updateMenu(List<SystrayAction> actions) async {
     Map<String, Map<String, String>> map = _serializeActions(actions);
-    String value = await _channel.invokeMethod('addActions', map);
+    String value = await _channel.invokeMethod('updateMenu', jsonEncode(map));
     return value;
   }
 

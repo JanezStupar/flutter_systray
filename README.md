@@ -2,7 +2,7 @@
 
 Flutter Systray is a plugin for `go-flutter-desktop` that enables support for systray menu for desktop flutter apps.
 
-Supports `MacOS`, `Windows` and `Linux` platforms via [`systray`](https://github.com/getlantern/systray)
+Supports `MacOS`, `Windows` and `Linux` platforms via [`trayhost`](https://github.com/shurcooL/trayhost)
 
 This plugin implements limited support. There are no submenus, checkboxes and such. PRs are welcome.
 
@@ -43,9 +43,9 @@ FlutterSystray.initSystray(main, [
 `[]SystrayAction` - a list of systray menu actions. Actions can have an icon, title and tooltip. Name serves as unique identifier. 
 
 
-To add more actions we can call `addActions` function:
+To change the actions we can call `updateMenu` function, note that updateMenu will replace existing menu items:
 ```dart
-FlutterSystray.addActions([
+FlutterSystray.updateMenu([
 SystrayAction(
     name: "counterEvent",
     label: "Counter event",

@@ -1,12 +1,13 @@
 package flutter_systray
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/getlantern/systray"
 	"github.com/go-flutter-desktop/go-flutter"
 	"github.com/go-flutter-desktop/go-flutter/plugin"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/shurcooL/trayhost"
 	"io/ioutil"
 	"strconv"
 )
@@ -21,7 +22,6 @@ type FlutterSystrayPlugin struct {
 
 type MainEntry struct {
 	title    string
-	tooltip  string
 	iconPath string
 }
 
@@ -42,8 +42,6 @@ var ActionType = &actionType{
 type SystrayAction struct {
 	name       string
 	label      string
-	tooltip    string
-	iconPath   string
 	actionType ActionEnumType
 }
 
@@ -59,13 +57,19 @@ func (p *FlutterSystrayPlugin) InitPluginGLFW(window *glfw.Window) error {
 func (p *FlutterSystrayPlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	p.channel = plugin.NewMethodChannel(messenger, channelName, plugin.StandardMethodCodec{})
 	p.channel.HandleFunc("initSystray", p.initSystrayHandler)
-	p.channel.HandleFunc("addActions", p.addActionsHandler)
+	p.channel.HandleFunc("updateMenu", p.updateMenuHandler)
 	return nil
 }
 
 func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply interface{}, err error) {
 	// Convert the params into SystrayAction type list
-	argsMap := arguments.(map[interface{}]interface{})
+	var argsMap map[string]interface{}
+	err = json.Unmarshal([]byte(arguments.(string)), &argsMap)
+	if err != nil {
+		fmt.Println("Failed to get config json file: ", err)
+		return nil, errors.New("failed to parse json")
+	}
+
 	var mainEntry MainEntry
 	if argsMap["mainEntry"] != nil {
 		mainEntry, err = parseMainEntry(argsMap["mainEntry"])
@@ -81,6 +85,9 @@ func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply 
 	}
 
 	var readyFunc = func() {
+		var iconData []byte
+		var title string
+
 		if len(mainEntry.iconPath) > 0 {
 			var data []byte
 			data, err := parseIcon(mainEntry.iconPath)
@@ -89,89 +96,113 @@ func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply 
 			}
 
 			if data != nil {
-				systray.SetIcon(data)
+				iconData = data
 			}
 		}
 
 		if len(mainEntry.title) > 0 {
-			println(mainEntry.title)
-			systray.SetTitle(mainEntry.title)
+			title = mainEntry.title
 		}
 
-		if len(mainEntry.tooltip) > 0 {
-			systray.SetTooltip(mainEntry.tooltip)
-		}
-
-		err = p.addActions(actions)
+		newMenu, err := p.actionsToMenu(actions)
 		if err != nil {
-			fmt.Println(fmt.Sprintf("an error has occurred while registering actions: %s", err))
+			fmt.Println("An error has occurred while registering actions", err)
 		}
+
+		trayhost.Exit()
+		trayhost.Initialize(title, iconData, newMenu)
+		trayhost.EnterLoop()
 	}
 
-	go func() {
-		systray.Run(readyFunc, systrayOnExit)
-	}()
+	go readyFunc()
 
 	return "ok", nil
 }
 
-func (p *FlutterSystrayPlugin) addActionsHandler(arguments interface{}) (reply interface{}, err error) {
-	argsMap := arguments.(map[interface{}]interface{})
+func (p *FlutterSystrayPlugin) updateMenuHandler(arguments interface{}) (reply interface{}, err error) {
+	var argsMap map[string]interface{}
+	err = json.Unmarshal([]byte(arguments.(string)), &argsMap)
+	if err != nil {
+		fmt.Println("Failed to get config json file: ", err)
+		return nil, errors.New("failed to parse json")
+	}
 
 	actions, err := parseActionParams(argsMap)
 	if err != nil {
 		fmt.Println("an error has occurred while parsing action parameters", err)
 	}
 
-	err = p.addActions(actions)
+	newMenu, err := p.actionsToMenu(actions)
 	if err != nil {
 		fmt.Println("An error has occurred while registering actions", err)
 	}
 
+	go func() {
+		trayhost.Exit()
+		trayhost.UpdateMenu(newMenu)
+		trayhost.EnterLoop()
+	}()
+
 	return "ok", nil
 }
 
-func (p *FlutterSystrayPlugin) addActions(actions []SystrayAction) error {
+func (p *FlutterSystrayPlugin) focusHandler(action *SystrayAction) func() {
+	return func() {
+		p.window.Show()
+	}
+}
+
+func (p *FlutterSystrayPlugin) closeHandler(action *SystrayAction) func() {
+	return func() {
+		p.window.SetShouldClose(true)
+	}
+}
+
+func (p *FlutterSystrayPlugin) eventHandler(action *SystrayAction) func() {
+	return func() {
+		err := p.invokeSystrayEvent(action)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("An error has occurred while invoking SystrayEvent: %s", err))
+		}
+	}
+}
+
+func (p *FlutterSystrayPlugin) actionsToMenu(actions []SystrayAction) ([]trayhost.MenuItem, error) {
+	var items []trayhost.MenuItem
+
 	for _, action := range actions {
-		// Adds a GLFW `window.Show` (https://godoc.org/github.com/go-gl/glfw/v3.2/glfw#Window.Show) operation to the
-		// systray menu. It is used to bring window to front.
-		if action.actionType == ActionType.Focus {
-			mShow := systray.AddMenuItem(action.label, action.tooltip)
-			addIcon(action.iconPath, mShow)
-			go func() {
-				for {
-					<-mShow.ClickedCh
-					p.window.Show()
-				}
-			}()
-		} else if action.actionType == ActionType.Quit {
+		localAction := action
+		if localAction.actionType == ActionType.Focus {
+			// Adds a GLFW `window.Show` (https://godoc.org/github.com/go-gl/glfw/v3.2/glfw#Window.Show) operation to the
+			// systray menu. It is used to bring window to front.
+			mShow := trayhost.MenuItem{
+				Title:   localAction.label,
+				Enabled: nil,
+				Handler: p.focusHandler(&localAction),
+			}
+			items = append(items, mShow)
+		} else if localAction.actionType == ActionType.Quit {
 			// Set up a handler to close the window
-			mQuit := systray.AddMenuItem(action.label, action.tooltip)
-			addIcon(action.iconPath, mQuit)
-			go func() {
-				<-mQuit.ClickedCh
-				p.window.SetShouldClose(true)
-			}()
-		} else if action.actionType == ActionType.SystrayEvent {
-			mEvent := systray.AddMenuItem(action.label, action.tooltip)
-			addIcon(action.iconPath, mEvent)
-			// Set up a callback handler
-			go func(reference SystrayAction) {
-				for {
-					<-mEvent.ClickedCh
-					err := p.invokeSystrayEvent(reference)
-					if err != nil {
-						fmt.Println(fmt.Sprintf("An error has occurred while invoking SystrayEvent: %s", err))
-					}
-				}
-			}(action)
+			mQuit := trayhost.MenuItem{
+				Title:   localAction.label,
+				Enabled: nil,
+				Handler: p.closeHandler(&localAction),
+			}
+			items = append(items, mQuit)
+		} else if localAction.actionType == ActionType.SystrayEvent {
+			mEvent := trayhost.MenuItem{
+				Title:   localAction.label,
+				Enabled: nil,
+				Handler: p.eventHandler(&localAction),
+			}
+			items = append(items, mEvent)
 		}
 	}
 
-	return nil
+	return items, nil
 }
 
-func (p *FlutterSystrayPlugin) invokeSystrayEvent(action SystrayAction) error {
+func (p *FlutterSystrayPlugin) invokeSystrayEvent(action *SystrayAction) error {
 	err := p.channel.InvokeMethod("systrayEvent", action.name)
 	if err != nil {
 		return err
@@ -181,26 +212,23 @@ func (p *FlutterSystrayPlugin) invokeSystrayEvent(action SystrayAction) error {
 }
 
 func parseMainEntry(entry interface{}) (MainEntry, error) {
-	m := entry.(map[interface{}]interface{})
+	m := entry.(map[string]interface{})
 	parsed := MainEntry{
 		title:    m["title"].(string),
-		tooltip:  m["tooltip"].(string),
 		iconPath: m["iconPath"].(string),
 	}
 	return parsed, nil
 }
 
-func parseActionParams(argsMap map[interface{}]interface{}) ([]SystrayAction, error) {
+func parseActionParams(argsMap map[string]interface{}) ([]SystrayAction, error) {
 	var actions []SystrayAction
 	for _, v := range argsMap {
-		valsMap := v.(map[interface{}]interface{})
+		valsMap := v.(map[string]interface{})
 
 		number, _ := strconv.Atoi(valsMap["actionType"].(string))
 		action := SystrayAction{
 			name:       valsMap["name"].(string),
 			label:      valsMap["label"].(string),
-			tooltip:    valsMap["tooltip"].(string),
-			iconPath:   valsMap["iconPath"].(string),
 			actionType: ActionEnumType(number),
 		}
 		actions = append(actions, action)
@@ -220,16 +248,6 @@ func parseIcon(absPath string) ([]byte, error) {
 		return data, nil
 	}
 	return data, nil
-}
-
-func addIcon(iconPath string, item *systray.MenuItem) {
-	if len(iconPath) > 0 {
-		data, err := parseIcon(iconPath)
-		if err != nil {
-			fmt.Println(fmt.Sprintf("An error has occurred while parsing the icon: %s", err))
-		}
-		item.SetIcon(data)
-	}
 }
 
 /*
