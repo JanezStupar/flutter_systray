@@ -1,3 +1,6 @@
+## 0.3.0
+Made init call synchronous and made other changes that allow the plugin to work on MacOS correctly.
+
 ## 0.2.0
 Replaced `systray` with `trayhost`
 Changed IPC format from serialized map to JSON

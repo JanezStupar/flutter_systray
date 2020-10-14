@@ -67,11 +67,8 @@ class FlutterSystray {
   /*
   * Show a systray icon
   * */
-  static Future<String> initSystray(MainEntry main, List<SystrayAction> actions) async {
-    Map<String, Map<String, String>> map = _serializeActions(actions);
-    map["mainEntry"] = main.serialize();
-
-    String value = await _channel.invokeMethod('initSystray', jsonEncode(map));
+  static Future<String> initSystray(MainEntry main) async {
+    String value = await _channel.invokeMethod('initSystray', jsonEncode(main.serialize()));
     return value;
   }
 

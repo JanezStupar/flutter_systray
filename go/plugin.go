@@ -56,7 +56,7 @@ func (p *FlutterSystrayPlugin) InitPluginGLFW(window *glfw.Window) error {
 // InitPlugin initializes the plugin.
 func (p *FlutterSystrayPlugin) InitPlugin(messenger plugin.BinaryMessenger) error {
 	p.channel = plugin.NewMethodChannel(messenger, channelName, plugin.StandardMethodCodec{})
-	p.channel.HandleFunc("initSystray", p.initSystrayHandler)
+	p.channel.HandleFuncSync("initSystray", p.initSystrayHandler)
 	p.channel.HandleFunc("updateMenu", p.updateMenuHandler)
 	return nil
 }
@@ -65,56 +65,40 @@ func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply 
 	// Convert the params into SystrayAction type list
 	var argsMap map[string]interface{}
 	err = json.Unmarshal([]byte(arguments.(string)), &argsMap)
+	println(arguments)
 	if err != nil {
 		fmt.Println("Failed to get config json file: ", err)
 		return nil, errors.New("failed to parse json")
 	}
 
 	var mainEntry MainEntry
-	if argsMap["mainEntry"] != nil {
-		mainEntry, err = parseMainEntry(argsMap["mainEntry"])
+	if argsMap != nil {
+		mainEntry, err = parseMainEntry(argsMap)
 		if err != nil {
 			fmt.Println("an error has occurred while parsing main entry parameters", err)
 		}
-		delete(argsMap, "mainEntry")
 	}
 
-	actions, err := parseActionParams(argsMap)
-	if err != nil {
-		fmt.Println("an error has occurred while parsing action parameters", err)
-	}
+	var iconData []byte
+	var title string
 
-	var readyFunc = func() {
-		var iconData []byte
-		var title string
-
-		if len(mainEntry.iconPath) > 0 {
-			var data []byte
-			data, err := parseIcon(mainEntry.iconPath)
-			if err != nil {
-				fmt.Println(fmt.Sprintf("An error has occurred while parsing the icon: %s", err))
-			}
-
-			if data != nil {
-				iconData = data
-			}
-		}
-
-		if len(mainEntry.title) > 0 {
-			title = mainEntry.title
-		}
-
-		newMenu, err := p.actionsToMenu(actions)
+	if len(mainEntry.iconPath) > 0 {
+		var data []byte
+		data, err := parseIcon(mainEntry.iconPath)
 		if err != nil {
-			fmt.Println("An error has occurred while registering actions", err)
+			fmt.Println(fmt.Sprintf("An error has occurred while parsing the icon: %s", err))
 		}
 
-		trayhost.Exit()
-		trayhost.Initialize(title, iconData, newMenu)
-		trayhost.EnterLoop()
+		if data != nil {
+			iconData = data
+		}
 	}
 
-	go readyFunc()
+	if len(mainEntry.title) > 0 {
+		title = mainEntry.title
+	}
+
+	trayhost.Initialize(title, iconData, nil)
 
 	return "ok", nil
 }
@@ -137,11 +121,7 @@ func (p *FlutterSystrayPlugin) updateMenuHandler(arguments interface{}) (reply i
 		fmt.Println("An error has occurred while registering actions", err)
 	}
 
-	go func() {
-		trayhost.Exit()
-		trayhost.UpdateMenu(newMenu)
-		trayhost.EnterLoop()
-	}()
+	updateMenu(newMenu)
 
 	return "ok", nil
 }
@@ -213,6 +193,7 @@ func (p *FlutterSystrayPlugin) invokeSystrayEvent(action *SystrayAction) error {
 
 func parseMainEntry(entry interface{}) (MainEntry, error) {
 	m := entry.(map[string]interface{})
+	println(fmt.Sprintf("parse main entry: %s", entry))
 	parsed := MainEntry{
 		title:    m["title"].(string),
 		iconPath: m["iconPath"].(string),
@@ -248,10 +229,4 @@ func parseIcon(absPath string) ([]byte, error) {
 		return data, nil
 	}
 	return data, nil
-}
-
-/*
-*	This function performs cleanup of systray menu
- */
-func systrayOnExit() {
 }

@@ -30,14 +30,16 @@ MainEntry main = MainEntry(
   iconPath: path,
 );
 
-FlutterSystray.initSystray(main, [
-  SystrayAction(
-      name: "focus",
-      label: "Focus",
-      tooltip: "Bring application window into focus",
-      iconPath: '',
-      actionType: ActionType.Focus),
-]).then();
+FlutterSystray.initSystray(main).then((result) {
+    FlutterSystray.updateMenu([
+      SystrayAction(
+          name: "focus",
+          label: "Focus",
+          tooltip: "Bring application window into focus",
+          iconPath: '',
+          actionType: ActionType.Focus),
+    ]);
+});
 ```
 `MainEntry` - represents the root node of the systray menu. It can have an icon (Win, Linux, Mac) or/and a title and tooltip (Mac).
 `[]SystrayAction` - a list of systray menu actions. Actions can have an icon, title and tooltip. Name serves as unique identifier. 
@@ -72,6 +74,7 @@ systemTray.registerEventHandler("counterEvent", () {
   });
 });
 ```
+
 Flutter Systray matches callbacks by `SystrayAction.name` property.
 
 

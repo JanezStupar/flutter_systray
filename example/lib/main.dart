@@ -21,28 +21,23 @@ void main() async {
     iconPath: path,
   );
 
-  // We can either declare our systray menu entries via the initial call
-  await FlutterSystray.initSystray(main, [
+  // We first init the systray menu and then add the menu entries
+  await FlutterSystray.initSystray(main);
+  await FlutterSystray.updateMenu([
     SystrayAction(
         name: "focus",
         label: "Focus",
-        tooltip: "Bring application window into focus",
-        iconPath: '',
         actionType: ActionType.Focus),
     SystrayAction(
         name: "counterEvent",
         label: "Counter event",
-        tooltip: "Will notify the flutter app!",
-        iconPath: '',
         actionType: ActionType.SystrayEvent),
     SystrayAction(
         name: "systrayEvent2",
         label: "Event 2",
-        tooltip: "Will notify the flutter app!",
-        iconPath: '',
         actionType: ActionType.SystrayEvent),
     SystrayAction(
-        name: "quit", label: "Quit", tooltip: "Close the application", iconPath: '', actionType: ActionType.Quit)
+        name: "quit", label: "Quit", actionType: ActionType.Quit)
   ]);
 
   runApp(MyApp());
