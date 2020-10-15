@@ -10,7 +10,7 @@ void main() async {
   // Windows need .ico file
   String path;
   if (Platform.isWindows) {
-    path = p.absolute('go/assets', 'icon.ico');
+    path = p.absolute('go\\assets', 'icon.ico');
   } else {
     path = p.absolute('go/assets', 'icon.png');
   }

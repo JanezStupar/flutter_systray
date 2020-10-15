@@ -7,7 +7,6 @@ import (
 	"github.com/go-flutter-desktop/go-flutter"
 	"github.com/go-flutter-desktop/go-flutter/plugin"
 	"github.com/go-gl/glfw/v3.3/glfw"
-	"github.com/shurcooL/trayhost"
 	"io/ioutil"
 	"strconv"
 )
@@ -98,7 +97,7 @@ func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply 
 		title = mainEntry.title
 	}
 
-	trayhost.Initialize(title, iconData, nil)
+	initialize(title, iconData)
 
 	return "ok", nil
 }
@@ -116,12 +115,7 @@ func (p *FlutterSystrayPlugin) updateMenuHandler(arguments interface{}) (reply i
 		fmt.Println("an error has occurred while parsing action parameters", err)
 	}
 
-	newMenu, err := p.actionsToMenu(actions)
-	if err != nil {
-		fmt.Println("An error has occurred while registering actions", err)
-	}
-
-	updateMenu(newMenu)
+	p.updateMenu(actions)
 
 	return "ok", nil
 }
@@ -145,41 +139,6 @@ func (p *FlutterSystrayPlugin) eventHandler(action *SystrayAction) func() {
 			fmt.Println(fmt.Sprintf("An error has occurred while invoking SystrayEvent: %s", err))
 		}
 	}
-}
-
-func (p *FlutterSystrayPlugin) actionsToMenu(actions []SystrayAction) ([]trayhost.MenuItem, error) {
-	var items []trayhost.MenuItem
-
-	for _, action := range actions {
-		localAction := action
-		if localAction.actionType == ActionType.Focus {
-			// Adds a GLFW `window.Show` (https://godoc.org/github.com/go-gl/glfw/v3.2/glfw#Window.Show) operation to the
-			// systray menu. It is used to bring window to front.
-			mShow := trayhost.MenuItem{
-				Title:   localAction.label,
-				Enabled: nil,
-				Handler: p.focusHandler(&localAction),
-			}
-			items = append(items, mShow)
-		} else if localAction.actionType == ActionType.Quit {
-			// Set up a handler to close the window
-			mQuit := trayhost.MenuItem{
-				Title:   localAction.label,
-				Enabled: nil,
-				Handler: p.closeHandler(&localAction),
-			}
-			items = append(items, mQuit)
-		} else if localAction.actionType == ActionType.SystrayEvent {
-			mEvent := trayhost.MenuItem{
-				Title:   localAction.label,
-				Enabled: nil,
-				Handler: p.eventHandler(&localAction),
-			}
-			items = append(items, mEvent)
-		}
-	}
-
-	return items, nil
 }
 
 func (p *FlutterSystrayPlugin) invokeSystrayEvent(action *SystrayAction) error {
