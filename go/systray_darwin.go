@@ -3,6 +3,7 @@
 package flutter_systray
 
 import "github.com/shurcooL/trayhost"
+import "fmt"
 
 func (p *FlutterSystrayPlugin) updateMenu(actions []SystrayAction) {
 	items, err := p.actionsToMenu(actions)
