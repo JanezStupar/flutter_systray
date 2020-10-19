@@ -1,3 +1,6 @@
+## 0.3.1
+Systray menu entries now display in order declared by Flutter app.
+
 ## 0.3.0
 Made init call synchronous and made other changes that allow the plugin to work on MacOS correctly.
 
