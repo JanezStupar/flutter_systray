@@ -8,7 +8,6 @@ import (
 	"github.com/go-flutter-desktop/go-flutter/plugin"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"io/ioutil"
-	"strconv"
 )
 
 const channelName = "plugins.flutter.io/flutter_systray"
@@ -20,11 +19,11 @@ type FlutterSystrayPlugin struct {
 }
 
 type MainEntry struct {
-	title    string
-	iconPath string
+	Title    string
+	IconPath string
 }
 
-type ActionEnumType int
+type ActionEnumType string
 
 type actionType struct {
 	Quit         ActionEnumType
@@ -33,15 +32,15 @@ type actionType struct {
 }
 
 var ActionType = &actionType{
-	Quit:         0,
-	Focus:        1,
-	SystrayEvent: 2,
+	Quit:         "0",
+	Focus:        "1",
+	SystrayEvent: "2",
 }
 
 type SystrayAction struct {
-	name       string
-	label      string
-	actionType ActionEnumType
+	Name       string
+	Label      string
+	ActionType ActionEnumType
 }
 
 var _ flutter.Plugin = &FlutterSystrayPlugin{} // compile-time type check
@@ -62,28 +61,19 @@ func (p *FlutterSystrayPlugin) InitPlugin(messenger plugin.BinaryMessenger) erro
 
 func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply interface{}, err error) {
 	// Convert the params into SystrayAction type list
-	var argsMap map[string]interface{}
-	err = json.Unmarshal([]byte(arguments.(string)), &argsMap)
-	println(arguments)
-	if err != nil {
-		fmt.Println("Failed to get config json file: ", err)
-		return nil, errors.New("failed to parse json")
-	}
-
 	var mainEntry MainEntry
-	if argsMap != nil {
-		mainEntry, err = parseMainEntry(argsMap)
-		if err != nil {
-			fmt.Println("an error has occurred while parsing main entry parameters", err)
-		}
+	err = json.Unmarshal([]byte(arguments.(string)), &mainEntry)
+	if err != nil {
+		fmt.Println("Failed to parse arguments: ", err)
+		return nil, errors.New("failed to parse json")
 	}
 
 	var iconData []byte
 	var title string
 
-	if len(mainEntry.iconPath) > 0 {
+	if len(mainEntry.IconPath) > 0 {
 		var data []byte
-		data, err := parseIcon(mainEntry.iconPath)
+		data, err := parseIcon(mainEntry.IconPath)
 		if err != nil {
 			fmt.Println(fmt.Sprintf("An error has occurred while parsing the icon: %s", err))
 		}
@@ -93,8 +83,8 @@ func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply 
 		}
 	}
 
-	if len(mainEntry.title) > 0 {
-		title = mainEntry.title
+	if len(mainEntry.Title) > 0 {
+		title = mainEntry.Title
 	}
 
 	initialize(title, iconData)
@@ -103,16 +93,11 @@ func (p *FlutterSystrayPlugin) initSystrayHandler(arguments interface{}) (reply 
 }
 
 func (p *FlutterSystrayPlugin) updateMenuHandler(arguments interface{}) (reply interface{}, err error) {
-	var argsMap map[string]interface{}
-	err = json.Unmarshal([]byte(arguments.(string)), &argsMap)
+	var actions []SystrayAction
+	err = json.Unmarshal([]byte(arguments.(string)), &actions)
 	if err != nil {
 		fmt.Println("Failed to get config json file: ", err)
 		return nil, errors.New("failed to parse json")
-	}
-
-	actions, err := parseActionParams(argsMap)
-	if err != nil {
-		fmt.Println("an error has occurred while parsing action parameters", err)
 	}
 
 	p.updateMenu(actions)
@@ -142,39 +127,12 @@ func (p *FlutterSystrayPlugin) eventHandler(action *SystrayAction) func() {
 }
 
 func (p *FlutterSystrayPlugin) invokeSystrayEvent(action *SystrayAction) error {
-	err := p.channel.InvokeMethod("systrayEvent", action.name)
+	err := p.channel.InvokeMethod("systrayEvent", action.Name)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func parseMainEntry(entry interface{}) (MainEntry, error) {
-	m := entry.(map[string]interface{})
-	println(fmt.Sprintf("parse main entry: %s", entry))
-	parsed := MainEntry{
-		title:    m["title"].(string),
-		iconPath: m["iconPath"].(string),
-	}
-	return parsed, nil
-}
-
-func parseActionParams(argsMap map[string]interface{}) ([]SystrayAction, error) {
-	var actions []SystrayAction
-	for _, v := range argsMap {
-		valsMap := v.(map[string]interface{})
-
-		number, _ := strconv.Atoi(valsMap["actionType"].(string))
-		action := SystrayAction{
-			name:       valsMap["name"].(string),
-			label:      valsMap["label"].(string),
-			actionType: ActionEnumType(number),
-		}
-		actions = append(actions, action)
-	}
-
-	return actions, nil
 }
 
 func parseIcon(absPath string) ([]byte, error) {

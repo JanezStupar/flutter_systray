@@ -9,26 +9,26 @@ func (p *FlutterSystrayPlugin) actionsToMenu(actions []SystrayAction) ([]trayhos
 
 	for _, action := range actions {
 		localAction := action
-		if localAction.actionType == ActionType.Focus {
+		if localAction.ActionType == ActionType.Focus {
 			// Adds a GLFW `window.Show` (https://godoc.org/github.com/go-gl/glfw/v3.2/glfw#Window.Show) operation to the
 			// systray menu. It is used to bring window to front.
 			mShow := trayhost.MenuItem{
-				Title:   localAction.label,
+				Title:   localAction.Label,
 				Enabled: nil,
 				Handler: p.focusHandler(&localAction),
 			}
 			items = append(items, mShow)
-		} else if localAction.actionType == ActionType.Quit {
+		} else if localAction.ActionType == ActionType.Quit {
 			// Set up a handler to close the window
 			mQuit := trayhost.MenuItem{
-				Title:   localAction.label,
+				Title:   localAction.Label,
 				Enabled: nil,
 				Handler: p.closeHandler(&localAction),
 			}
 			items = append(items, mQuit)
-		} else if localAction.actionType == ActionType.SystrayEvent {
+		} else if localAction.ActionType == ActionType.SystrayEvent {
 			mEvent := trayhost.MenuItem{
-				Title:   localAction.label,
+				Title:   localAction.Label,
 				Enabled: nil,
 				Handler: p.eventHandler(&localAction),
 			}

@@ -73,19 +73,20 @@ class FlutterSystray {
   }
 
   static Future<String> updateMenu(List<SystrayAction> actions) async {
-    Map<String, Map<String, String>> map = _serializeActions(actions);
-    String value = await _channel.invokeMethod('updateMenu', jsonEncode(map));
+    List<Map<String, String>> map = _serializeActions(actions);
+    String json = jsonEncode(map);
+    String value = await _channel.invokeMethod('updateMenu', json);
     return value;
   }
 
-  static Map<String, Map<String, String>> _serializeActions(List<SystrayAction> actions) {
-    var map = <String, Map<String, String>>{};
+  static List<Map<String, String>> _serializeActions(List<SystrayAction> actions) {
+    var result = <Map<String, String>>[];
 
     actions.forEach((SystrayAction element) {
-      map[element.name] = element.serialize();
+       result.add(element.serialize());
     });
 
-    return map;
+    return result;
   }
 
   registerEventHandler(String handlerKey, Function handler) {
