@@ -1,3 +1,6 @@
+## 0.3.2
+Fix an issue where systray menu would sometimes not display in windows after startup.
+
 ## 0.3.1
 Systray menu entries now display in order declared by Flutter app.
 
