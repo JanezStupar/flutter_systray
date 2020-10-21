@@ -8,8 +8,8 @@ package flutter_systray
 //* sometimes in windows. (see: https://github.com/getlantern/systray/issues/148)
 //*/
 import (
-	"https://github.com/getlantern/systray/"
-	//"https://github.com/r10v/systray/"
+	"https://github.com/getlantern/systray"
+	//"https://github.com/r10v/systray"
 )
 
 func (p *FlutterSystrayPlugin) updateMenu(actions []SystrayAction) {
