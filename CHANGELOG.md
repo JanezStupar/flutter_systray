@@ -1,6 +1,3 @@
-## 0.3.6
-Revert to getlantern version of systray
-
 ## 0.3.5
 Clean up go dependencies
 
