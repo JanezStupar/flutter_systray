@@ -1,3 +1,6 @@
+## 0.3.5
+Clean up go dependencies
+
 ## 0.3.4
 Replaced getlantern systray with r10v fork to improve menu behavior on windows (menu still doesn't always appear)
 
