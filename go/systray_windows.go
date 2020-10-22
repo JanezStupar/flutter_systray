@@ -2,14 +2,8 @@
 
 package flutter_systray
 
-///*
-//* TODO: Replace this fork with the original getlantern implementation of systray.
-//* This fork was chosen because it contains a fix for the issue that causes systray menu not to display
-//* sometimes in windows. (see: https://github.com/getlantern/systray/issues/148)
-//*/
 import (
-	"https://github.com/getlantern/systray"
-	//"https://github.com/r10v/systray"
+	"github.com/getlantern/systray"
 )
 
 func (p *FlutterSystrayPlugin) updateMenu(actions []SystrayAction) {

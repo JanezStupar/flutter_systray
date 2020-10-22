@@ -1,3 +1,6 @@
+## 0.3.3
+Fix import in windows implementation
+
 ## 0.3.2
 Fix an issue where systray menu would sometimes not display in windows after startup.
 
