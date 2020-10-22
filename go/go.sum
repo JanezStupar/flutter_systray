@@ -15,6 +15,8 @@ github.com/getlantern/hidden v0.0.0-20190325191715-f02dbb02be55 h1:XYzSdCbkzOC0F
 github.com/getlantern/hidden v0.0.0-20190325191715-f02dbb02be55/go.mod h1:6mmzY2kW1TOOrVy+r41Za2MxXM+hhqTtY3oBKd2AgFA=
 github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f h1:wrYrQttPS8FHIRSlsrcuKazukx/xqO/PpLZzZXsF+EA=
 github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f/go.mod h1:D5ao98qkA6pxftxoqzibIBBrLSUli+kYnJqrgBf9cIA=
+github.com/getlantern/systray v1.0.5 h1:AtejufOyQdCwQ5ND1LFgTTpDsRYAo7htM0NqUHK1KFo=
+github.com/getlantern/systray v1.0.5/go.mod h1:AecygODWIsBquJCJFop8MEQcJbWFfw/1yWbVabNgpCM=
 github.com/go-flutter-desktop/go-flutter v0.42.0 h1:uOWTmV2GLEFde6GMKLIGop4MDuvQddoVTca0k9abAOg=
 github.com/go-flutter-desktop/go-flutter v0.42.0/go.mod h1:qDG/ylPWgvZOL0IjId3ndUKm9T4czrlFAQYUm2dqzis=
 github.com/go-gl/gl v0.0.0-20190320180904-bf2b1f2f34d7 h1:SCYMcCJ89LjRGwEa0tRluNRiMjZHalQZrVrvTbPh+qw=
@@ -35,8 +37,6 @@ github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/r10v/systray v1.0.11 h1:fJeYnhIascuqJUpqWOzo/WRMLAcbZc4mYtmklkP4tYk=
-github.com/r10v/systray v1.0.11/go.mod h1:7UdLcjBmYy5W1TlMGt1Jiv1uNAVIq9SHqbAKXmvtsbY=
 github.com/shurcooL/trayhost v0.0.0-20181020202213-114974ef9e16 h1:7EdFnfVUAu1Rv5bNVjaygc2dWu7RiZV804h3qOJtlbM=
 github.com/shurcooL/trayhost v0.0.0-20181020202213-114974ef9e16/go.mod h1:jCGK0NF4lbbRrPGyl1Eonb4Xicbeiy2Ry6okvvZWlnQ=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d h1:zE9ykElWQ6/NYmHa3jpm/yHnI4xSofP+UP6SpjHcSeM=

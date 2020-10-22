@@ -3,7 +3,7 @@
 package flutter_systray
 
 import (
-	"github.com/r10v/systray"
+	"github.com/getlantern/systray"
 )
 
 func (p *FlutterSystrayPlugin) updateMenu(actions []SystrayAction) {
