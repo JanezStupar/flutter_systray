@@ -1,3 +1,6 @@
+## 0.4.0
+Settle with r10v systray fork for now
+
 ## 0.3.5
 Clean up go dependencies
 
