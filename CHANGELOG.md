@@ -1,3 +1,6 @@
+## 0.3.4
+Replaced getlantern systray with r10v fork to improve menu behavior on windows (menu still doesn't always appear)
+
 ## 0.3.3
 Fix import in windows implementation
 
